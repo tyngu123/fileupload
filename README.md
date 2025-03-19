@@ -49,7 +49,7 @@
 
 ### Clone the Repository
 ```bash
-git clonehttps://github.com/tyngu123/fileupload.git
+git clone https://github.com/tyngu123/fileupload.git
 ```
 
 ### Run with Maven
