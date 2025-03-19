@@ -5,6 +5,7 @@
  * This script provides functionality for a file management system that integrates with
  * a Spring Boot REST API. Features include:
  * - File listing and management
+ * - Multiple file selection and bulk delete
  * - Drag and drop file uploads with progress tracking
  * - File downloads
  * - File deletion with confirmation
@@ -12,20 +13,20 @@
  * - Toast notifications
  *
  * @author File Manager
- * @version 1.0.0
+ * @version 1.1.0
  */
 document.addEventListener('DOMContentLoaded', () => {
-    // Configuration
+
     const config = {
         API_URL: 'http://localhost:8080/api/files',
         TOAST_DURATION: 3000,
         AUTO_REFRESH_INTERVAL: 60000 // 1 minute
     };
 
-    // API URL configuration
+
     const API_URL = config.API_URL;
 
-    // DOM Elements
+
     const navLinks = document.querySelectorAll('.nav-link');
     const views = document.querySelectorAll('.view');
     const fileListBody = document.getElementById('file-list-body');
@@ -49,16 +50,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const dialogMessage = document.getElementById('dialog-message');
     const dialogConfirm = document.getElementById('dialog-confirm');
     const dialogCancel = document.getElementById('dialog-cancel');
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 
-    // State
+
     let selectedFile = null;
     let currentUploadXHR = null;
     let activeView = 'files';
     let fileToDelete = null;
+    let selectedFileIds = new Set();
+    let allFiles = [];
 
-    // Navigation between views
+
     function navigateToView(viewName) {
-        // Clear any auto-refresh timers
+
         clearTimeout(window.autoRefreshTimeout);
 
         views.forEach(view => {
@@ -76,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         activeView = viewName;
 
-        // Update URL hash without triggering page reload
+
         history.pushState(null, '', `#${viewName}`);
 
         if (viewName === 'files') {
@@ -84,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Handle browser back/forward navigation
+
     window.addEventListener('popstate', () => {
         const hash = window.location.hash.substring(1);
         if (hash === 'files' || hash === 'upload') {
@@ -94,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Navigation event listeners
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -108,8 +113,94 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // File Upload Logic
-    // Set up drag and drop events
+
+    selectAllCheckbox.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.file-row-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+            const fileId = checkbox.dataset.id;
+
+            if (this.checked) {
+                selectedFileIds.add(fileId);
+                checkbox.closest('.file-row').classList.add('selected');
+            } else {
+                selectedFileIds.delete(fileId);
+                checkbox.closest('.file-row').classList.remove('selected');
+            }
+        });
+
+        updateDeleteSelectedButtonVisibility();
+    });
+
+    deleteSelectedBtn.addEventListener('click', () => {
+        if (selectedFileIds.size > 0) {
+            const fileCount = selectedFileIds.size;
+            dialogTitle.textContent = 'Delete Selected Files';
+            dialogMessage.textContent = `Are you sure you want to delete ${fileCount} selected file${fileCount !== 1 ? 's' : ''}?`;
+            confirmDialog.classList.remove('hidden');
+            dialogConfirm.onclick = () => {
+                confirmDialog.classList.add('hidden');
+                deleteSelectedFiles();
+            };
+        }
+    });
+
+    function updateDeleteSelectedButtonVisibility() {
+        if (selectedFileIds.size > 0) {
+            deleteSelectedBtn.classList.remove('hidden');
+        } else {
+            deleteSelectedBtn.classList.add('hidden');
+        }
+    }
+
+    function toggleFileSelection(checkbox, fileId) {
+        if (checkbox.checked) {
+            selectedFileIds.add(fileId);
+            checkbox.closest('.file-row').classList.add('selected');
+        } else {
+            selectedFileIds.delete(fileId);
+            checkbox.closest('.file-row').classList.remove('selected');
+
+            // Update select all checkbox
+            if (selectedFileIds.size < allFiles.length) {
+                selectAllCheckbox.checked = false;
+            }
+        }
+
+        updateDeleteSelectedButtonVisibility();
+    }
+
+    function deleteSelectedFiles() {
+        if (selectedFileIds.size === 0) return;
+
+        setLoading(true);
+
+        const deletePromises = Array.from(selectedFileIds).map(id =>
+            fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to delete file with ID ${id}`);
+                    }
+                    return id;
+                })
+        );
+
+        Promise.all(deletePromises)
+            .then(deletedIds => {
+                const fileCount = deletedIds.length;
+                showToast(`Successfully deleted ${fileCount} file${fileCount !== 1 ? 's' : ''}.`, 'success');
+                selectedFileIds.clear();
+                updateDeleteSelectedButtonVisibility();
+                loadFiles();
+            })
+            .catch(error => {
+                console.error('Error deleting files:', error);
+                showToast('Error occurred while deleting files. Please try again.', 'error');
+                setLoading(false);
+            });
+    }
+
+
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropzone.addEventListener(eventName, preventDefaults, false);
     });
@@ -137,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     uploadBtn.addEventListener('click', uploadFile);
     cancelUploadBtn.addEventListener('click', cancelFileSelection);
 
-    // Handle file drop
+
     function handleFileDrop(e) {
         const files = e.dataTransfer.files;
         if (files.length) {
@@ -145,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Handle file selection
+
     function handleFileSelect(e) {
         const files = e.target.files;
         if (files.length) {
@@ -153,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Select a file for upload
+
     function selectFile(file) {
         selectedFile = file;
 
@@ -166,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
         progressPercentage.textContent = '0%';
     }
 
-    // Cancel file selection
+
     function cancelFileSelection() {
         if (currentUploadXHR) {
             currentUploadXHR.abort();
@@ -178,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedFileContainer.classList.add('hidden');
     }
 
-    // Upload the selected file
+
     function uploadFile() {
         if (!selectedFile) return;
 
@@ -232,17 +323,18 @@ document.addEventListener('DOMContentLoaded', () => {
             currentUploadXHR = null;
         });
 
-        // Send the request
+
         xhr.open('POST', `${API_URL}/upload`);
         xhr.send(formData);
 
         currentUploadXHR = xhr;
     }
 
-    // File Listing Logic
-    // Load files from the API
+
     function loadFiles() {
         setLoading(true);
+        selectedFileIds.clear();
+        updateDeleteSelectedButtonVisibility();
 
         fetch(API_URL)
             .then(response => {
@@ -252,8 +344,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(files => {
+                allFiles = files; // Store all files for reference
                 renderFiles(files);
                 setLoading(false);
+                selectAllCheckbox.checked = false;
 
                 // Set up automatic refresh
                 if (activeView === 'files') {
@@ -272,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // Render files in the UI
+
     function renderFiles(files) {
         fileListBody.innerHTML = '';
 
@@ -289,7 +383,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const fileRow = document.createElement('div');
             fileRow.className = 'file-row';
 
+
+            const isSelected = selectedFileIds.has(file.id.toString());
+            if (isSelected) {
+                fileRow.classList.add('selected');
+            }
+
             fileRow.innerHTML = `
+                <div class="file-cell file-checkbox">
+                    <input type="checkbox" class="checkbox file-row-checkbox" 
+                           data-id="${file.id}" ${isSelected ? 'checked' : ''}>
+                </div>
                 <div class="file-cell file-name" title="${file.fileName}">${file.fileName}</div>
                 <div class="file-cell file-type">${getFileTypeLabel(file.fileType)}</div>
                 <div class="file-cell file-size">${formatFileSize(file.fileSize)}</div>
@@ -307,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fileListBody.appendChild(fileRow);
         });
 
-        // Add event listeners to action buttons
+
         document.querySelectorAll('.download-btn').forEach(btn => {
             btn.addEventListener('click', () => downloadFile(btn.dataset.id));
         });
@@ -321,14 +425,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 showDeleteConfirmDialog();
             });
         });
+
+
+        document.querySelectorAll('.file-row-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                toggleFileSelection(this, this.dataset.id);
+            });
+        });
     }
 
-    // Download a file
+
     function downloadFile(id) {
         window.location.href = `${API_URL}/${id}`;
     }
 
-    // Delete a file
+
     function deleteFile(id) {
         setLoading(true);
 
@@ -340,6 +451,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('Failed to delete file.');
                 }
                 showToast('File deleted successfully!', 'success');
+                // Remove from selected files if it was selected
+                selectedFileIds.delete(id.toString());
+                updateDeleteSelectedButtonVisibility();
                 loadFiles();
             })
             .catch(error => {
@@ -349,19 +463,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // Confirm Dialog Logic
+
     function showDeleteConfirmDialog() {
         dialogTitle.textContent = 'Delete File';
         dialogMessage.textContent = `Are you sure you want to delete "${fileToDelete.name}"?`;
         confirmDialog.classList.remove('hidden');
+
+
+        dialogConfirm.onclick = () => {
+            confirmDialog.classList.add('hidden');
+            if (fileToDelete) {
+                deleteFile(fileToDelete.id);
+                fileToDelete = null;
+            }
+        };
     }
 
     dialogConfirm.addEventListener('click', () => {
-        confirmDialog.classList.add('hidden');
-        if (fileToDelete) {
-            deleteFile(fileToDelete.id);
-            fileToDelete = null;
-        }
+
     });
 
     dialogCancel.addEventListener('click', () => {
@@ -369,8 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileToDelete = null;
     });
 
-    // Utility Functions
-    // Format file size for display
+
     function formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
 
@@ -381,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // Format date for display
+
     function formatDate(dateString) {
         if (!dateString) return '';
 
@@ -389,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return date.toLocaleString();
     }
 
-    // Get a friendly label for file types
+
     function getFileTypeLabel(mimeType) {
         if (!mimeType) return 'Unknown';
 
@@ -410,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Show/hide loading spinner
+
     function setLoading(isLoading) {
         if (isLoading) {
             loadingSpinner.classList.remove('hidden');
@@ -419,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Show a toast notification
+
     function showToast(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
@@ -428,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const toastContainer = document.getElementById('toast-container');
         toastContainer.appendChild(toast);
 
-        // Remove the toast after a delay
+
         setTimeout(() => {
             toast.classList.add('removing');
             setTimeout(() => {
@@ -438,4 +556,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 300);
         }, config.TOAST_DURATION);
     }
+
+
+    navigateToView(window.location.hash.substring(1) || 'files');
+
+
+    updateDeleteSelectedButtonVisibility();
 });

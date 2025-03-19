@@ -26,7 +26,10 @@
     <section id="files-view" class="view">
         <div class="view-header">
             <h2>Your Files</h2>
-            <button class="btn btn-primary" id="navigate-to-upload">Upload New File</button>
+            <div class="actions-container">
+                <button id="delete-selected-btn" class="btn btn-danger hidden">Delete Selected</button>
+                <button class="btn btn-primary" id="navigate-to-upload">Upload New File</button>
+            </div>
         </div>
 
         <div id="file-list-container">
@@ -37,6 +40,9 @@
 
             <div id="file-list" class="file-list">
                 <div class="file-list-header">
+                    <div class="file-cell file-checkbox">
+                        <input type="checkbox" id="select-all-checkbox" class="checkbox">
+                    </div>
                     <div class="file-cell file-name">File Name</div>
                     <div class="file-cell file-type">Type</div>
                     <div class="file-cell file-size">Size</div>
