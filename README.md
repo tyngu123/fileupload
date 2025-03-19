@@ -49,7 +49,7 @@
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/yourusername/filemanager.git
+git clone https://github.com/tyngu123/filemanager.git
 cd filemanager
 ```
 
