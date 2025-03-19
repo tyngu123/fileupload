@@ -27,7 +27,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/files")
-@CrossOrigin(origins = "*") // For development purposes
+@CrossOrigin(origins = "*")
 public class FileController {
 
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);

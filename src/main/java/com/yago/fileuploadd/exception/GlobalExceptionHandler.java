@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.PAYLOAD_TOO_LARGE);
     }
 
-    // Tratamento genérico para outras exceções
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGenericException(Exception ex) {
         logger.error("Unhandled exception", ex);

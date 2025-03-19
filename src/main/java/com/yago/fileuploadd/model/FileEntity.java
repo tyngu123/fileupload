@@ -34,12 +34,12 @@ public class FileEntity {
     @Column(nullable = false)
     private LocalDateTime uploadDateTime;
 
-    // Default constructor required by JPA
+
     public FileEntity() {
         this.uploadDateTime = LocalDateTime.now();
     }
 
-    // Constructor with fields
+
     public FileEntity(String fileName, String fileType, long fileSize, byte[] data) {
         this.fileName = fileName;
         this.fileType = fileType;
@@ -48,7 +48,7 @@ public class FileEntity {
         this.uploadDateTime = LocalDateTime.now();
     }
 
-    // Getters and Setters
+
     public Long getId() {
         return id;
     }
@@ -97,7 +97,7 @@ public class FileEntity {
         this.uploadDateTime = uploadDateTime;
     }
 
-    // hashCode and equals methods
+
     @Override
     public int hashCode() {
         return Objects.hash(id);
@@ -111,7 +111,7 @@ public class FileEntity {
         return Objects.equals(id, that.id);
     }
 
-    // toString method (excludes data field to avoid large output)
+
     @Override
     public String toString() {
         return "FileEntity{" +
