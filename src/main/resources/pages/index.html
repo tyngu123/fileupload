@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+<header class="header">
+    <div class="container header-container">
+        <h1 class="logo">File Manager</h1>
+        <nav class="nav">
+            <ul class="nav-list">
+                <li class="nav-item"><a href="#" class="nav-link active" data-view="files">Files</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" data-view="upload">Upload</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="main container">
+    <!-- Files View -->
+    <section id="files-view" class="view">
+        <div class="view-header">
+            <h2>Your Files</h2>
+            <button class="btn btn-primary" id="navigate-to-upload">Upload New File</button>
+        </div>
+
+        <div id="file-list-container">
+            <div id="no-files-message" class="no-items-message">
+                <p>No files have been uploaded yet.</p>
+                <button class="btn btn-primary" id="navigate-to-upload-empty">Upload Your First File</button>
+            </div>
+
+            <div id="file-list" class="file-list">
+                <div class="file-list-header">
+                    <div class="file-cell file-name">File Name</div>
+                    <div class="file-cell file-type">Type</div>
+                    <div class="file-cell file-size">Size</div>
+                    <div class="file-cell file-date">Upload Date</div>
+                    <div class="file-cell file-actions">Actions</div>
+                </div>
+                <div id="file-list-body" class="file-list-body">
+                    <!-- Files will be populated here dynamically -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload View -->
+    <section id="upload-view" class="view hidden">
+        <div class="view-header">
+            <h2>Upload Files</h2>
+        </div>
+
+        <div class="upload-container">
+            <div id="dropzone" class="dropzone">
+                <div class="dropzone-content">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Drag & Drop Files Here</h3>
+                    <p>or</p>
+                    <div class="file-input-container">
+                        <button class="btn btn-secondary" id="browse-btn">Browse Files</button>
+                        <input type="file" id="file-input" class="file-input" />
+                    </div>
+                </div>
+            </div>
+
+            <div id="selected-file-container" class="selected-file-container hidden">
+                <div class="selected-file">
+                    <div class="file-info">
+                        <div id="selected-file-name" class="selected-file-name"></div>
+                        <div id="selected-file-size" class="selected-file-size"></div>
+                    </div>
+
+                    <div id="upload-progress-container" class="upload-progress-container hidden">
+                        <div class="progress-bar">
+                            <div id="progress-bar-inner" class="progress-bar-inner"></div>
+                        </div>
+                        <div id="progress-percentage" class="progress-percentage">0%</div>
+                    </div>
+
+                    <div class="upload-actions">
+                        <button id="upload-btn" class="btn btn-success">Upload</button>
+                        <button id="cancel-upload-btn" class="btn btn-danger">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Confirm Dialog -->
+<div id="confirm-dialog" class="dialog-overlay hidden">
+    <div class="dialog">
+        <h3 id="dialog-title" class="dialog-title">Confirm Action</h3>
+        <p id="dialog-message" class="dialog-message">Are you sure you want to proceed?</p>
+        <div class="dialog-actions">
+            <button id="dialog-cancel" class="btn btn-secondary">Cancel</button>
+            <button id="dialog-confirm" class="btn btn-danger">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Loading Spinner -->
+<div id="loading-spinner" class="loading-overlay hidden">
+    <div class="spinner"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
